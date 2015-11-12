@@ -1,12 +1,14 @@
 #include <misc/defaults.h>
 
-typedef struct messages message[MESSAGES_LENGTH]; 
-
 typedef struct message {
   unsigned long int user_id;
   char message[MESSAGE_LENGTH];
   unsigned long int random_id;
 } message;
+
+typedef struct messages { 
+  message message[MESSAGES_LENGTH];
+} messages; 
 
 typedef struct sent_message {
   unsigned long int id;
@@ -15,8 +17,8 @@ typedef struct sent_message {
   time_t date;
 } sent_message; 
 
-bool set_typing();
-sent_message send_message();
-messages get_history();
-messages delete_messages();
-messages get_messages();
+bool set_typing(void);
+sent_message send_message(void);
+messages get_history(void);
+messages delete_messages(void);
+messages get_messages(void);

@@ -13,6 +13,6 @@ typedef struct authorized {
   authorization authorization;
 } authorized;
 
-authorization sign_up();
-authorized sing_in();
-bool log_out();
+authorization sign_up(void);
+authorized sing_in(void);
+bool log_out(void);

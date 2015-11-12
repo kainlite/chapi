@@ -4,9 +4,11 @@ typedef struct contact {
   unsigned long int user_id;
 } contact;
 
-typedef struct contacts contact[CONTACTS_LENGTH]; 
+typedef struct contacts { 
+  contact contact[CONTACTS_LENGTH]; 
+} contacts;
 
-contacts get_contacts();
-contacts import_contacts();
-bool block();
-bool unblock();
+contacts get_contacts(void);
+contacts import_contacts(void);
+bool block(void);
+bool unblock(void);
