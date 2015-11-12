@@ -1,5 +1,6 @@
 #include <kore/kore.h>
 #include <kore/http.h>
+#include <registrations/authorizations.h>
 
 int		page(struct http_request *);
 
