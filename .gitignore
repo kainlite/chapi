@@ -1,0 +1,5 @@
+*.o
+.objs
+chapi.so
+assets.h
+cert
