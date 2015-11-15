@@ -7,6 +7,9 @@
 #include <notifications/notifications.h>
 #include <secretmessages/secretmessages.h>
 #include <users/users.h>
+#include <sms/encode.h>
+#include <sms/twilio.h>
+#include <curl/curl.h>
 
 int		page(struct http_request *);
 
