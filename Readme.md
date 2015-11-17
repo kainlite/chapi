@@ -27,4 +27,4 @@ As the description says: we aim to do a minimal implementation.
 ## Build / Run
 You can make an alias or run it like this:
 
-kore clean; env LDFLAGS="-ltwilioc -lconfig -lcurl" kore build; kore run
+kore clean; env LDFLAGS="-ltwilioc -lconfig -lcurl $(pkg-config --cflags --libs libmongoc-1.0)" kore build; kore run
