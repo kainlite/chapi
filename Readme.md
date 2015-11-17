@@ -8,6 +8,8 @@ https://core.telegram.org/methods
 
 As the description says: we aim to do a minimal implementation.
 
+#### Important note: use localhost to navigate the site.
+
 ### Requirements:
 
 ## Packages for Arch Linux:
@@ -25,4 +27,4 @@ As the description says: we aim to do a minimal implementation.
 ## Build / Run
 You can make an alias or run it like this:
 
-env LDFLAGS="-ltwilioc -lcurl -lconfig" kore run
+kore clean; env LDFLAGS="-ltwilioc -lconfig -lcurl" kore build; kore run
