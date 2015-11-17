@@ -7,9 +7,6 @@
 #include <notifications/notifications.h>
 #include <secretmessages/secretmessages.h>
 #include <users/users.h>
-#include <curl/curl.h>
-#include <sms/encode.h>
-#include <sms/twilio.h>
 
 int serve_index(struct http_request *);
 int serve_apiw1(struct http_request *);
