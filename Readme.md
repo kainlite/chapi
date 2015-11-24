@@ -15,6 +15,7 @@ As the description says: we aim to do a minimal implementation.
 ## Packages for Arch Linux:
 * base-devel (pacman) 
 * kore.io (manual)
+* mongodb (pacman)
 * mongo-c-driver (pacaur)
 * libconfig (pacman)
 
@@ -27,4 +28,4 @@ As the description says: we aim to do a minimal implementation.
 ## Build / Run
 You can make an alias or run it like this:
 
-kore clean; env LDFLAGS="-lconfig $(pkg-config --cflags --libs libmongoc-1.0)" kore build; kore run
+kore clean; env CFLAGS="$(pkg-config --cflags --libs libmongoc-1.0)" LDFLAGS="-lconfig -lmongoc-1.0" kore build; kore run
