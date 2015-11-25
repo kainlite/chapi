@@ -28,4 +28,4 @@ As the description says: we aim to do a minimal implementation.
 ## Build / Run
 You can make an alias or run it like this:
 
-kore clean; env CFLAGS="$(pkg-config --cflags --libs libmongoc-1.0)" LDFLAGS="-lconfig -lmongoc-1.0" kore build; kore run
+kore clean; env CFLAGS="" LDFLAGS="-lconfig" kore build; kore run

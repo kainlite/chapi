@@ -8,15 +8,12 @@
 #include <notifications/notifications.h>
 #include <secretmessages/secretmessages.h>
 #include <users/users.h>
-#include <bson.h>
-#include <bcon.h>
-#include <mongoc.h>
 #include <misc/database.h>
 
 
 int	serve_index(struct http_request *req)
 {
-	init(1);
+	init();
 	http_response(req, 501, "501 Not Implemented", 19);
 	return (KORE_RESULT_OK);
 }
@@ -27,10 +24,8 @@ int	serve_apiw1(struct http_request *req)
 	return (KORE_RESULT_OK);
 }
 
-int	init(int state)
+int	init(void)
 {
-	mongo_connect("chapi_development");
-
 	return (KORE_RESULT_OK);
 }
 
