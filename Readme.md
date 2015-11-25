@@ -13,7 +13,7 @@ As the description says: we aim to do a minimal implementation.
 ### Requirements:
 
 ## Packages for Arch Linux:
-* base-devel (pacman) 
+* base-devel (pacman)
 * kore.io (manual)
 * mongodb (pacman)
 * mongo-c-driver (pacaur)
@@ -29,3 +29,9 @@ As the description says: we aim to do a minimal implementation.
 You can make an alias or run it like this:
 
 kore clean; env CFLAGS="" LDFLAGS="-lconfig" kore build; kore run
+
+## To test requests better use curl, for example:
+
+curl -X POST -k --data \
+  "email=jdoe@gmail.com&firstname=John&lastname=Doe&password=123456&password_confirmation" \
+  https://localhost:8888/sign_up

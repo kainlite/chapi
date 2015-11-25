@@ -14,5 +14,6 @@ typedef struct authorized {
 } authorized;
 
 authorization sign_up(void);
+void send_code(void);
 authorized sing_in(void);
 bool log_out(void);
