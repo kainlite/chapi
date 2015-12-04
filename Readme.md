@@ -18,6 +18,7 @@ As the description says: we aim to do a minimal implementation.
 * mongodb (pacman)
 * mongo-c-driver (pacaur)
 * libconfig (pacman)
+* libflate (pacaur)
 
 ## Useful readings / APIs
 
@@ -28,7 +29,7 @@ As the description says: we aim to do a minimal implementation.
 ## Build / Run
 You can make an alias or run it like this:
 
-kore clean; env CFLAGS="" LDFLAGS="-lconfig" kore build; kore run
+kore clean; env CFLAGS="" LDFLAGS="-lconfig -lcurl -lflate" kore build; kore run
 
 ## To test requests better use curl, for example:
 
