@@ -31,6 +31,8 @@ You can make an alias or run it like this:
 
 kore clean; env CFLAGS="" LDFLAGS="-lconfig -lcurl -lflate" kore build; kore run
 
+Or set your env vars in run.sh (copy of example_run.sh) and just run ./run.sh
+
 ## To test requests better use curl, for example:
 
 curl -X POST -k --data \

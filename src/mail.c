@@ -11,7 +11,9 @@
 /* 
  * TODO: Remove magic numbers, and refactor if possible.
  * Fix code (random number), and template replacement. 
+ * Add real message-id generator
  * */
+
 static char *payload_text;
 
 struct upload_status {
