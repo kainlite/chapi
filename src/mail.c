@@ -11,8 +11,9 @@
 
 /* 
  * TODO: Refactor. 
- * TODO: Add real message-id generator
- * */
+ * If we need to send more mails than just the sign up, we could extract the 
+ * template portion out of here to be handled from the calling point.
+ */
 
 static char *payload_text;
 
@@ -47,6 +48,8 @@ int send_mail(struct kore_task *t)
 {
 	char		code[CODE_LENGTH];
 	u_int32_t	len;		
+	
+	char		message_id[MESSAGEID_LENGTH];
 
 	char	to[EMAIL_LENGTH], html_template_path[TEMPLATE_NAME_LENGTH];
 
@@ -70,10 +73,14 @@ int send_mail(struct kore_task *t)
 	if (len > sizeof(html_template_path))
 		return (KORE_RESULT_ERROR);
 
+	kore_snprintf(message_id, sizeof(message_id),
+		    NULL, "%x.%x", getpid(),(unsigned int) time(NULL));
+
 	flateSetFile(&f, html_template_path);
 
 	flateSetVar(f, "email", to);
 	flateSetVar(f, "code", code);
+	flateSetVar(f, "message_id", message_id);
 	flateSetVar(f, "from", getenv("MAIL_FROM"));
 	flateSetVar(f, "domain", getenv("DOMAIN"));
 	flateSetVar(f, "organization", getenv("ORGANIZATION"));
