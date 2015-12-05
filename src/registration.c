@@ -8,37 +8,73 @@
 #include <includes/mail.h>
 #include <misc/database.h>
 
+struct rstate {
+	struct		kore_task	task;
+};	
+
 int	serve_sign_up(struct http_request *req)
 {
-	int		p, r;
+	int		p;
+	char		*html_template_path;
 	char		*msg;
 	char		*email;
 	u_int32_t	len;
-	struct		kore_buf	*buf;
+	char		result[64];
 
-	p = http_populate_arguments(req);
+	struct		rstate		*state;	
 
-	if (p == 0) {
-		msg = "400 Invalid information";
-		http_response(req, 400, msg, strlen(msg));
+	html_template_path = "templates/sign_up.html";
+
+	if (req->hdlr_extra == NULL) {
+		p = http_populate_arguments(req);
+
+		if (p == false) {
+			msg = "400 Invalid information";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+		
+		if (!http_argument_get_string("email", &email, &len)) {
+			msg = "400 Invalid information";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		state = kore_malloc(sizeof(*state));
+		req->hdlr_extra = state;
+
+		kore_task_create(&state->task, send_mail);
+		kore_task_bind_request(&state->task, req);
+
+		kore_task_run(&state->task);
+		kore_task_channel_write(&state->task, email, len);
+		kore_task_channel_write(&state->task, html_template_path, strlen(html_template_path));
+
+		return (KORE_RESULT_RETRY);
+	} else {
+		state = req->hdlr_extra;
+	}
+
+	if (kore_task_state(&state->task) != KORE_TASK_STATE_FINISHED) {
+		http_request_sleep(req);
+		return (KORE_RESULT_RETRY);
+	}
+
+	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
+		kore_task_destroy(&state->task);
+		http_response(req, 500, NULL, 0);
 		return (KORE_RESULT_OK);
 	}
 
-	buf = kore_buf_create(128);
-	
-	if (http_argument_get_string("email", &email, &len))
-		kore_buf_appendf(buf, "email as a string: '%s' (%d)\n", email, len);
-
-	r = send_mail("kainlite@gmail.com", "templates/sign_up.text", "templates/sign_up.html");
-
-	if (r == 1) {
-		msg = "400 Could not process email information";
-		http_response(req, 400, msg, strlen(msg));
-		return (KORE_RESULT_OK);
+	len = kore_task_channel_read(&state->task, result, sizeof(result));
+	if (len > sizeof(result)) {
+		http_response(req, 500, NULL, 0);
+	} else {
+		msg = "200 Code sent";
+		http_response(req, 200, msg, strlen(msg));
 	}
 
-	msg = "200 Code sent";
+	kore_task_destroy(&state->task);
 
-	http_response(req, 200, msg, strlen(msg));
 	return (KORE_RESULT_OK);
 }

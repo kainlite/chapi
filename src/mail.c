@@ -3,16 +3,15 @@
 #include <curl/curl.h>
 #include <time.h>
 #include <kore/kore.h>
+#include <kore/tasks.h>
 #include <includes/mail.h>
 #include <misc/secure_random.h>
 #include <stdbool.h>
 #include <external/flate.h>
 
 /* 
- * TODO: Remove magic numbers, and refactor if possible.
- * Fix code (random number), and template replacement. 
- * Add real message-id generator
- * this blocks, it shouldn't 
+ * TODO: Refactor. 
+ * TODO: Add real message-id generator
  * */
 
 static char *payload_text;
@@ -44,10 +43,12 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *stream)
 	return 0;
 }
 
-int send_mail(char *to, char *text_template, char *html_template)
+int send_mail(struct kore_task *t)
 {
-	unsigned	char		code[4];
-	char *scode;
+	char		code[CODE_LENGTH];
+	u_int32_t	len;		
+
+	char	to[EMAIL_LENGTH], html_template_path[TEMPLATE_NAME_LENGTH];
 
 	CURL *curl;
 	CURLcode res = CURLE_OK;
@@ -57,16 +58,22 @@ int send_mail(char *to, char *text_template, char *html_template)
 
 	upload_ctx.read = false;
 
-	generate_random(code, 4);
-	scode = (char*) code;
-
+	generate_random(code, CODE_LENGTH);
 
 	Flate *f = NULL;
 
-	flateSetFile(&f, html_template);
+	len = kore_task_channel_read(t, to, sizeof(to));
+	if (len > sizeof(to))
+		return (KORE_RESULT_ERROR);
+
+	len = kore_task_channel_read(t, html_template_path, sizeof(html_template_path));
+	if (len > sizeof(html_template_path))
+		return (KORE_RESULT_ERROR);
+
+	flateSetFile(&f, html_template_path);
 
 	flateSetVar(f, "email", to);
-	flateSetVar(f, "code", scode);
+	flateSetVar(f, "code", code);
 	flateSetVar(f, "from", getenv("MAIL_FROM"));
 	flateSetVar(f, "domain", getenv("DOMAIN"));
 	flateSetVar(f, "organization", getenv("ORGANIZATION"));
@@ -96,14 +103,12 @@ int send_mail(char *to, char *text_template, char *html_template)
 		recipients = curl_slist_append(recipients, to);
 		curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
 
-		/* curl_easy_setopt(curl, CURLOPT_READDATA, buf); */
-		/* curl_easy_setopt(curl, CURLOPT_READFUNCTION, (const char *)payload_source); */
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, payload_source);
 		curl_easy_setopt(curl, CURLOPT_READDATA, &upload_ctx);
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
 		/* debug information */ 
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, DEBUG_CURL);
 
 		/* Send the message */ 
 		res = curl_easy_perform(curl);

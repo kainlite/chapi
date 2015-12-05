@@ -1,1 +1,7 @@
-int send_mail(char *to, char *text_template, char *html_template);
+#define DEBUG_CURL 0L
+
+#define CODE_LENGTH 8
+#define TEMPLATE_NAME_LENGTH 64
+#define EMAIL_LENGTH 64
+
+int send_mail(struct kore_task *);
