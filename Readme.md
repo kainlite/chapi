@@ -14,7 +14,7 @@ As the description says: we aim to do a minimal implementation.
 
 ## Packages for Arch Linux:
 * base-devel (pacman)
-* kore.io (manual)
+* kore.io (manual, it must be compiled with TASKS=1)
 * curl (pacman)
 * mongodb (pacman)
 * mongo-c-driver (pacaur)

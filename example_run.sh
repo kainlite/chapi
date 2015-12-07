@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Using gmail as an example, we can use whatever.
+export ENVIRONMENT="chapi_development"
 export MAIL_HOST=smtp.gmail.com:587
 export MAIL_USER=xxxxxx@gmail.com
 export MAIL_PASSWORD=xxxxxx

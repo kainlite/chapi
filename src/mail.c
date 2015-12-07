@@ -15,13 +15,13 @@
  * template portion out of here to be handled from the calling point.
  */
 
-static char *payload_text;
+static	char	*payload_text;
 
-struct upload_status {
+struct	upload_status {
 	bool read;
 };
 
-static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *stream)
+static	size_t	payload_source(void *ptr, size_t size, size_t nmemb, void *stream)
 {
 	struct upload_status *upload_ctx = (struct upload_status *)stream;
 	const char *data;
@@ -44,7 +44,7 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *stream)
 	return 0;
 }
 
-int send_mail(struct kore_task *t)
+int	send_mail(struct kore_task *t)
 {
 	char		code[CODE_LENGTH];
 	u_int32_t	len;		
@@ -103,10 +103,8 @@ int send_mail(struct kore_task *t)
 
 		curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
 
-		/* Set mail from*/
 		curl_easy_setopt(curl, CURLOPT_MAIL_FROM, getenv("MAIL_FROM"));
 
-		/* Add recipients */ 
 		recipients = curl_slist_append(recipients, to);
 		curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
 
@@ -114,23 +112,17 @@ int send_mail(struct kore_task *t)
 		curl_easy_setopt(curl, CURLOPT_READDATA, &upload_ctx);
 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
-		/* debug information */ 
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, DEBUG_CURL);
 
-		/* Send the message */ 
 		res = curl_easy_perform(curl);
 
-		/* Check for errors */ 
 		if(res != CURLE_OK)
 			kore_log(LOG_NOTICE, "Mail error: %s", curl_easy_strerror(res));
 
-		/* Free the list of recipients */ 
 		curl_slist_free_all(recipients);
 
-		/* Always cleanup */ 
 		curl_easy_cleanup(curl);
 
-		/* We close the file handle when curl has finished doing it's thing*/
 		flateFreeMem(f);
 	}
 

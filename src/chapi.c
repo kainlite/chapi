@@ -13,8 +13,7 @@
 
 /*
  * TODO: http response text could be json, or something else.
- * TODO: Remove all magic numbers :/
- * */
+ */
 
 int	serve_index(struct http_request *req)
 {
@@ -30,6 +29,5 @@ int	serve_apiw1(struct http_request *req)
 
 int	init(void)
 {
-	kore_log(LOG_NOTICE, "Initializing db, and stuff...");
 	return (KORE_RESULT_OK);
 }

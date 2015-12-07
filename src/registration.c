@@ -8,7 +8,7 @@
 #include <includes/mail.h>
 #include <misc/database.h>
 
-struct rstate {
+struct	rstate {
 	struct		kore_task	task;
 };	
 
@@ -74,6 +74,7 @@ int	serve_sign_up(struct http_request *req)
 		http_response(req, 200, msg, strlen(msg));
 	}
 
+	kore_mem_free(state);
 	kore_task_destroy(&state->task);
 
 	return (KORE_RESULT_OK);

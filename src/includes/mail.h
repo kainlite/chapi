@@ -5,4 +5,4 @@
 #define EMAIL_LENGTH 64
 #define MESSAGEID_LENGTH 32
 
-int send_mail(struct kore_task *);
+int	send_mail(struct kore_task *);
