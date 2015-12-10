@@ -1,14 +1,19 @@
 #include <kore/kore.h>
 #include <kore/http.h>
 #include <kore/tasks.h>
-#include <chapi.h>
-#include <misc/defaults.h>
+
+#include <bson.h>
+#include <mongoc.h>
+
+#include <includes/chapi.h>
 #include <includes/registration.h>
 #include <includes/contact.h>
 #include <includes/message.h>
 #include <includes/notification.h>
 #include <includes/user.h>
 #include <includes/mail.h>
+
+#include <misc/defaults.h>
 #include <misc/database.h>
 
 /*
@@ -27,7 +32,28 @@ int	serve_apiw1(struct http_request *req)
 	return (KORE_RESULT_OK);
 }
 
-int	init(void)
+int	init(int state)
 {
+	switch (state) {
+	case KORE_MODULE_LOAD:
+		kore_log(LOG_NOTICE, "Initializing db");
+
+		mongoc_init();
+
+		client = mongoc_client_new("mongodb://localhost:27017/");
+
+		break;
+	case KORE_MODULE_UNLOAD:
+		kore_log(LOG_NOTICE, "Freeing resources");
+
+		mongoc_client_destroy(client);
+
+		mongoc_cleanup ();
+
+		break;
+	default:
+		kore_log(LOG_NOTICE, "state %d unknown!", state);
+		break;
+	}
 	return (KORE_RESULT_OK);
 }

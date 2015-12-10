@@ -1,11 +1,13 @@
 #include <kore/kore.h>
 #include <kore/http.h>
 #include <kore/tasks.h>
-#include <chapi.h>
-#include <misc/defaults.h>
+
+#include <includes/chapi.h>
 #include <includes/registration.h>
 #include <includes/user.h>
 #include <includes/mail.h>
+
+#include <misc/defaults.h>
 #include <misc/database.h>
 
 struct	rstate {
@@ -43,7 +45,7 @@ int	serve_sign_up(struct http_request *req)
 		state = kore_malloc(sizeof(*state));
 		req->hdlr_extra = state;
 
-		kore_task_create(&state->task, send_mail);
+		kore_task_create(&state->task, create_user);
 		kore_task_bind_request(&state->task, req);
 
 		kore_task_run(&state->task);
