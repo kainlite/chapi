@@ -2,12 +2,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <kore/kore.h>
 #include <kore/tasks.h>
 
 #include <bson.h>
 #include <mongoc.h>
+
+#include "libscrypt.h"
+#include "external/crypto_scrypt-hexconvert.h"
 
 #include <curl/curl.h>
 
@@ -57,11 +61,22 @@ static	size_t	payload_source(void *ptr, size_t size, size_t nmemb, void *stream)
 
 int	create_user(struct kore_task *t)
 {
+	/* Scrypt vars */
+	char outbuf[132];
+	int retval;
+
+	/* App vars */
 	u_int32_t	len;
 
-	char		code[CODE_LENGTH];
+	char		*msg;
+	char		rcode[CODE_LENGTH];
 	char		message_id[MESSAGEID_LENGTH];
-	char		to[EMAIL_LENGTH], html_template_path[TEMPLATE_NAME_LENGTH];
+	char		to[EMAIL_LENGTH];
+	char		html_template_path[TEMPLATE_NAME_LENGTH];
+	char		password[PASSWORD_LENGTH];
+	char		alias[ALIAS_LENGTH];
+	char		firstname[NAME_LENGTH];
+	char		lastname[NAME_LENGTH];
 
 	CURL		*curl;
 
@@ -73,16 +88,34 @@ int	create_user(struct kore_task *t)
 	upload_ctx.read = false;
 
 	/* Read channel/buffer */
-	len = kore_task_channel_read(t, to, sizeof(to));
-	if (len > sizeof(to))
-		return (KORE_RESULT_ERROR);
-
 	len = kore_task_channel_read(t, html_template_path, sizeof(html_template_path));
 	if (len > sizeof(html_template_path))
 		return (KORE_RESULT_ERROR);
 
+	len = kore_task_channel_read(t, to, sizeof(to));
+	if (len > sizeof(to))
+		return (KORE_RESULT_ERROR);
+
+	len = kore_task_channel_read(t, password, sizeof(password));
+	if (len > sizeof(password))
+		return (KORE_RESULT_ERROR);
+
+	len = kore_task_channel_read(t, alias, sizeof(alias));
+	if (len > sizeof(alias))
+		return (KORE_RESULT_ERROR);
+
+	len = kore_task_channel_read(t, firstname, sizeof(firstname));
+	if (len > sizeof(firstname))
+		return (KORE_RESULT_ERROR);
+
+	len = kore_task_channel_read(t, lastname, sizeof(lastname));
+	if (len > sizeof(lastname))
+		return (KORE_RESULT_ERROR);
+
 	kore_snprintf(message_id, sizeof(message_id),
 		    NULL, "%x.%x", getpid(),(unsigned int) time(NULL));
+
+	generate_random(rcode, CODE_LENGTH);
 
 	/* Mongo */
 	mongoc_collection_t *collection;
@@ -91,7 +124,6 @@ int	create_user(struct kore_task *t)
 	/* Find vars */
 	const bson_t *doc;
 	bson_t *query;
-	char *str;
 
 	/* Insert vars*/
 	bson_error_t error;
@@ -104,23 +136,50 @@ int	create_user(struct kore_task *t)
 	BSON_APPEND_UTF8 (query, "email", to);
 	cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 
-	/* If the user exists we don't care about doing anything else */
-	if (mongoc_cursor_next(cursor, &doc)) {
-		str = bson_as_json (doc, NULL);
-		printf("%s\n", str);
-		bson_free (str);
-		return NULL;
+	/* If the user exists we don't do anything else */
+	if (mongoc_cursor_next(cursor, &doc))
+	{
+		msg = "failed";
+		kore_task_channel_write(t, msg, strlen(msg));
+
+		kore_task_set_result(t, KORE_RESULT_ERROR);
+
+		return (KORE_RESULT_ERROR);
 	} else {
+		retval = libscrypt_hash(
+			 outbuf,
+			 password,
+			 SCRYPT_N,
+			 SCRYPT_r,
+			 SCRYPT_p
+		);
+
+		if(retval < 0)
+		{
+			kore_log(LOG_NOTICE, "Couldn't generate hash %s", outbuf);
+
+			msg = "failed";
+			kore_task_channel_write(t, msg, strlen(msg));
+
+			kore_task_set_result(t, KORE_RESULT_ERROR);
+
+			return (KORE_RESULT_ERROR);
+		}
+
 		bdoc = bson_new();
 		bson_oid_init(&oid, NULL);
 		BSON_APPEND_OID(bdoc, "_id", &oid);
 		BSON_APPEND_UTF8(bdoc, "email", to);
+		BSON_APPEND_UTF8(bdoc, "code", rcode);
+		BSON_APPEND_UTF8(bdoc, "password", outbuf);
+		BSON_APPEND_UTF8(bdoc, "alias", alias);
+		BSON_APPEND_UTF8(bdoc, "firstname", firstname);
+		BSON_APPEND_UTF8(bdoc, "lastname", lastname);
 
 		if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, bdoc, NULL, &error)) {
+			kore_task_set_result(t, KORE_RESULT_ERROR);
 			fprintf (stderr, "%s\n", error.message);
 		}
-
-		bson_destroy (bdoc);
 	}
 
 	/* Cleanup release all used memory */
@@ -128,14 +187,12 @@ int	create_user(struct kore_task *t)
 	bson_destroy(query);
 	mongoc_cursor_destroy(cursor);
 
-	generate_random(code, CODE_LENGTH);
-
 	/* Process template */
 	Flate *f = NULL;
 	flateSetFile(&f, html_template_path);
 
 	flateSetVar(f, "email", to);
-	flateSetVar(f, "code", code);
+	flateSetVar(f, "code", rcode);
 	flateSetVar(f, "message_id", message_id);
 	flateSetVar(f, "from", getenv("MAIL_FROM"));
 	flateSetVar(f, "domain", getenv("DOMAIN"));
@@ -174,8 +231,18 @@ int	create_user(struct kore_task *t)
 		/* This sends the mail out */
 		res = curl_easy_perform(curl);
 
-		if(res != CURLE_OK)
+		if(res != CURLE_OK) {
 			kore_log(LOG_NOTICE, "Mail error: %s", curl_easy_strerror(res));
+
+			msg = "failed";
+			kore_task_channel_write(t, msg, strlen(msg));
+
+			kore_task_set_result(t, KORE_RESULT_ERROR);
+			return (KORE_RESULT_ERROR);
+		}
+
+		msg = "success";
+		kore_task_channel_write(t, msg, strlen(msg));
 
 		curl_slist_free_all(recipients);
 
@@ -184,5 +251,6 @@ int	create_user(struct kore_task *t)
 		flateFreeMem(f);
 	}
 
-	return (int)res;
+	kore_task_set_result(t, KORE_RESULT_OK);
+	return (KORE_RESULT_OK);
 }
