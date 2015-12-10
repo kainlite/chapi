@@ -21,7 +21,8 @@
  * TODO: Refactor (this should be in caps rofl).
  * If we need to send more mails than just the sign up, we could extract the
  * template portion out of here to be handled from the calling point.
- * Or we can use this scheduled-task pattern which seems a better aproach
+ *
+ * We can use this scheduled-task pattern which seems a good aproach
  * overall.
  */
 
@@ -170,7 +171,8 @@ int	create_user(struct kore_task *t)
 
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, DEBUG_CURL);
 
-		/* res = curl_easy_perform(curl); */
+		/* This sends the mail out */
+		res = curl_easy_perform(curl);
 
 		if(res != CURLE_OK)
 			kore_log(LOG_NOTICE, "Mail error: %s", curl_easy_strerror(res));
