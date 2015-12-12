@@ -1,4 +1,4 @@
-#define CODE_LENGTH 8
+#define CODE_LENGTH 9
 #define EMAIL_LENGTH 32
 #define PASSWORD_LENGTH 32
 #define ALIAS_LENGTH 32
