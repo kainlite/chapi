@@ -6,14 +6,8 @@
 #include <mongoc.h>
 
 #include <includes/chapi.h>
-#include <includes/registration.h>
-#include <includes/contact.h>
-#include <includes/message.h>
-#include <includes/notification.h>
-#include <includes/user.h>
 #include <includes/mail.h>
 
-#include <misc/defaults.h>
 #include <misc/database.h>
 
 /*

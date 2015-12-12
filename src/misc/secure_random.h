@@ -1,1 +1,1 @@
-void generate_random(char *buff, int length);
+int get_random(char *buff, int length);

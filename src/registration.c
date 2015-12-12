@@ -3,11 +3,8 @@
 #include <kore/tasks.h>
 
 #include <includes/chapi.h>
-#include <includes/registration.h>
-#include <includes/user.h>
 #include <includes/mail.h>
 
-#include <misc/defaults.h>
 #include <misc/database.h>
 
 struct	rstate {
@@ -24,14 +21,11 @@ int	serve_sign_up(struct http_request *req)
 	char		*alias;
 	char		*firstname;
 	char		*lastname;
-	u_int32_t	len;
 	u_int32_t	email_len;
 	u_int32_t	password_len;
 	u_int32_t	alias_len;
 	u_int32_t	firstname_len;
 	u_int32_t	lastname_len;
-	char		result[64];
-	char		*expected_result = "success";
 
 	struct		rstate		*state;
 
@@ -105,24 +99,15 @@ int	serve_sign_up(struct http_request *req)
 	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
 		kore_task_destroy(&state->task);
 
-		msg = "500 Internal error";
-		http_response(req, 500, msg, strlen(msg));
+		msg = "400 Invalid input";
+		http_response(req, 400, msg, strlen(msg));
 
 		return (KORE_RESULT_OK);
-	}
-
-	len = kore_task_channel_read(&state->task, result, sizeof(result));
-	if (len > sizeof(result)) {
-		msg = "500 Internal error";
-		http_response(req, 500, msg, strlen(msg));
 	} else {
-		if (result == expected_result) {
-			msg = "200 Code sent";
-			http_response(req, 200, msg, strlen(msg));
-		} else {
-			msg = "500 Internal error";
-			http_response(req, 500, msg, strlen(msg));
-		}
+		msg = "200 Code sent";
+		http_response(req, 200, msg, strlen(msg));
+
+		return (KORE_RESULT_OK);
 	}
 
 	kore_mem_free(state);
