@@ -193,3 +193,89 @@ int	serve_confirm_email(struct http_request *req)
 
 	return (KORE_RESULT_OK);
 }
+
+int	serve_sign_in(struct http_request *req)
+{
+	int		p;
+	char		*msg;
+	char		*email;
+	char		*password;
+	char		session_id[HASH_LENGTH];
+	char		dst[HASH_LENGTH];
+
+	u_int32_t	len;
+	u_int32_t	email_len;
+	u_int32_t	password_len;
+
+	struct		rstate		*state;
+
+	if (req->hdlr_extra == NULL) {
+		p = http_populate_arguments(req);
+
+		if (p == false) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		if (!http_argument_get_string("email", &email, &email_len)) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		if (!http_argument_get_string("password", &password, &password_len)) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		state = kore_malloc(sizeof(*state));
+		req->hdlr_extra = state;
+
+		kore_task_create(&state->task, sign_in);
+		kore_task_bind_request(&state->task, req);
+
+		kore_task_run(&state->task);
+
+		kore_task_channel_write(&state->task, email, email_len);
+		kore_task_channel_write(&state->task, password, password_len);
+
+		return (KORE_RESULT_RETRY);
+	} else {
+		state = req->hdlr_extra;
+	}
+
+	if (kore_task_state(&state->task) != KORE_TASK_STATE_FINISHED) {
+		http_request_sleep(req);
+		return (KORE_RESULT_RETRY);
+	}
+
+	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
+		kore_task_destroy(&state->task);
+
+		msg = "403 You shall not pass";
+		http_response(req, 400, msg, strlen(msg));
+
+		return (KORE_RESULT_OK);
+	} else {
+                len = kore_task_channel_read(&state->task, dst, sizeof(dst));
+                if (len > sizeof(dst))
+                        return (KORE_RESULT_ERROR);
+
+                kore_snprintf(session_id, (len+1),
+                                              NULL, "%s", dst);
+
+		http_response_header(req, "set-cookie", session_id);
+
+		msg = "200 Valid user";
+		http_response(req, 200, msg, strlen(msg));
+
+		return (KORE_RESULT_OK);
+	}
+
+	kore_mem_free(state);
+	kore_task_destroy(&state->task);
+
+	return (KORE_RESULT_OK);
+}

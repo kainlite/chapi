@@ -5,6 +5,8 @@
 #define	BUFFER_LENGTH 32
 #define TEMPLATE_NAME_LENGTH 32
 #define MESSAGEID_LENGTH 32
+#define HASH_LENGTH 132
+#define DHASH_LENGTH 132
 
 int	create_user(struct kore_task *);
 

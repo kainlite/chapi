@@ -15,5 +15,8 @@ typedef	struct	UserStruct {
 	char		code[CODE_LENGTH];
 }	User;
 
+int	sign_in(struct kore_task *t);
 int	confirm_email(struct kore_task *t);
 int	save_confirmed_email(char *rcode);
+
+int authenticate_user(char *email, char *password);

@@ -51,3 +51,11 @@ int	init(int state)
 	}
 	return (KORE_RESULT_OK);
 }
+
+int	validate_session(struct http_request *req, char *data)
+{
+        /* TODO: check store for session */
+        kore_log(LOG_NOTICE, "Data: %s");
+
+	return (KORE_RESULT_OK);
+}
