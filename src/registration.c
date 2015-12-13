@@ -18,11 +18,13 @@ int	serve_sign_up(struct http_request *req)
 	char		*msg;
 	char		*email;
 	char		*password;
+	char		*password_confirmation;
 	char		*alias;
 	char		*firstname;
 	char		*lastname;
 	u_int32_t	email_len;
 	u_int32_t	password_len;
+	u_int32_t	password_confirmation_len;
 	u_int32_t	alias_len;
 	u_int32_t	firstname_len;
 	u_int32_t	lastname_len;
@@ -47,6 +49,18 @@ int	serve_sign_up(struct http_request *req)
 		}
 
 		if (!http_argument_get_string("password", &password, &password_len)) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		if (!http_argument_get_string("password", &password_confirmation, &password_confirmation_len)) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		if(password_len != password_confirmation_len && password != password_confirmation) {
 			msg = "400 Invalid request";
 			http_response(req, 400, msg, strlen(msg));
 			return (KORE_RESULT_OK);
@@ -105,6 +119,70 @@ int	serve_sign_up(struct http_request *req)
 		return (KORE_RESULT_OK);
 	} else {
 		msg = "200 Code sent";
+		http_response(req, 200, msg, strlen(msg));
+
+		return (KORE_RESULT_OK);
+	}
+
+	kore_mem_free(state);
+	kore_task_destroy(&state->task);
+
+	return (KORE_RESULT_OK);
+}
+
+int	serve_confirm_email(struct http_request *req)
+{
+	int		p;
+	char		*msg;
+	char		*code;
+	u_int32_t	code_len;
+
+	struct		rstate		*state;
+
+	if (req->hdlr_extra == NULL) {
+		p = http_populate_arguments(req);
+
+		if (p == false) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		if (!http_argument_get_string("code", &code, &code_len)) {
+			msg = "400 Invalid request";
+			http_response(req, 400, msg, strlen(msg));
+			return (KORE_RESULT_OK);
+		}
+
+		state = kore_malloc(sizeof(*state));
+		req->hdlr_extra = state;
+
+		kore_task_create(&state->task, confirm_email);
+		kore_task_bind_request(&state->task, req);
+
+		kore_task_run(&state->task);
+
+		kore_task_channel_write(&state->task, code, code_len);
+
+		return (KORE_RESULT_RETRY);
+	} else {
+		state = req->hdlr_extra;
+	}
+
+	if (kore_task_state(&state->task) != KORE_TASK_STATE_FINISHED) {
+		http_request_sleep(req);
+		return (KORE_RESULT_RETRY);
+	}
+
+	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
+		kore_task_destroy(&state->task);
+
+		msg = "400 Invalid input";
+		http_response(req, 400, msg, strlen(msg));
+
+		return (KORE_RESULT_OK);
+	} else {
+		msg = "200 Valid code";
 		http_response(req, 200, msg, strlen(msg));
 
 		return (KORE_RESULT_OK);

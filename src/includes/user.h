@@ -1,3 +1,5 @@
+#include <kore/tasks.h>
+
 #define CODE_LENGTH 9
 #define EMAIL_LENGTH 32
 #define PASSWORD_LENGTH 32
@@ -12,3 +14,6 @@ typedef	struct	UserStruct {
 	char		lastname[NAME_LENGTH];
 	char		code[CODE_LENGTH];
 }	User;
+
+int	confirm_email(struct kore_task *t);
+int	save_confirmed_email(char *rcode);

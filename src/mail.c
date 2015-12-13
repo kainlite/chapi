@@ -23,12 +23,9 @@
 #include <external/flate.h>
 
 /*
- * TODO: Refactor (this should be in caps rofl).
- * If we need to send more mails than just the sign up, we could extract the
- * template portion out of here to be handled from the calling point.
- *
- * We can use this scheduled-task pattern which seems a good aproach
- * overall.
+ * TODO: Refactor.
+ * We need to extract the template portion out of here to be handled
+ * from the calling point.
  */
 
 static	char	*payload_text;
@@ -141,6 +138,7 @@ int create_user_record(User user) {
 		BSON_APPEND_UTF8(bdoc, "alias", user.alias);
 		BSON_APPEND_UTF8(bdoc, "firstname", user.firstname);
 		BSON_APPEND_UTF8(bdoc, "lastname", user.lastname);
+		BSON_APPEND_BOOL(bdoc, "active", false);
 
 		if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, bdoc, NULL, &error)) {
 			fprintf (stderr, "%s\n", error.message);
