@@ -264,7 +264,7 @@ int	serve_sign_in(struct http_request *req)
                         return (KORE_RESULT_ERROR);
 
                 kore_snprintf(session_id, (len+1),
-                                              NULL, "%s", dst);
+                                              NULL, "ch_auth=%s", dst);
 
 		http_response_header(req, "set-cookie", session_id);
 
