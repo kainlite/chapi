@@ -1,12 +1,8 @@
 # CH-API
 
-## Telegram alike, minimum implementation / Toy project.
+## Chat API.
 
-In case you want to know what are we following:
-
-https://core.telegram.org/methods
-
-As the description says: we aim to do a minimal implementation.
+The goal of this project is to provide the basics to get a chat working.
 
 #### Important note: use localhost to navigate the site.
 
