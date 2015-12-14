@@ -17,6 +17,8 @@ As the description says: we aim to do a minimal implementation.
 * kore.io (manual, it must be compiled with TASKS=1)
 * curl (pacman)
 * mongodb (pacman)
+* redis (pacman)
+* hiredis (pacman)
 * libconfig (pacman)
 * libscrypt (pacaur) (requires some manual work -fPIC in LDFLAGS)
 * mongo-c-driver (pacaur)

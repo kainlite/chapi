@@ -28,6 +28,7 @@ int	serve_apiw1(struct http_request *req)
 
 int	init(int state)
 {
+	/* TODO: Improve db connection handling. */
 	switch (state) {
 	case KORE_MODULE_LOAD:
 		kore_log(LOG_NOTICE, "Initializing db");
@@ -36,6 +37,11 @@ int	init(int state)
 
 		client = mongoc_client_new("mongodb://localhost:27017/");
 
+		redisClient = redisConnect("127.0.0.1", 6379);
+		if (redisClient != NULL && redisClient->err) {
+			printf("Error: %s\n", redisClient->errstr);
+		}
+
 		break;
 	case KORE_MODULE_UNLOAD:
 		kore_log(LOG_NOTICE, "Freeing resources");
@@ -43,6 +49,8 @@ int	init(int state)
 		mongoc_client_destroy(client);
 
 		mongoc_cleanup ();
+
+		redisFree(redisClient);
 
 		break;
 	default:
@@ -54,8 +62,15 @@ int	init(int state)
 
 int	validate_session(struct http_request *req, char *data)
 {
-        /* TODO: check store for session */
-        kore_log(LOG_NOTICE, "Data: %s");
+	redisReply	*reply;
 
-	return (KORE_RESULT_OK);
+	reply = redisCommand(redisClient, "GET %s", data);
+
+	if (reply->str) {
+		return (KORE_RESULT_OK);
+	} else {
+		return (KORE_RESULT_ERROR);
+	}
+
+	freeReplyObject(reply);
 }

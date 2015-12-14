@@ -8,6 +8,8 @@
 #include <bson.h>
 #include <mongoc.h>
 
+#include "hiredis.h"
+
 #include "libscrypt.h"
 
 #include <includes/chapi.h>
@@ -68,7 +70,7 @@ int	confirm_email(struct kore_task *t) {
 		return (KORE_RESULT_ERROR);
 
 	kore_snprintf(rcode, (len+1),
-		    NULL, "%s", dst);
+		      NULL, "%s", dst);
 
 	retval = save_confirmed_email(rcode);
 	if (retval == KORE_RESULT_ERROR) {
@@ -84,7 +86,7 @@ int	confirm_email(struct kore_task *t) {
 
 int authenticate_user(char *email, char *password)
 {
-        /* App*/
+	/* App*/
 	int			retval;
 
 	/* Mongo */
@@ -95,10 +97,10 @@ int authenticate_user(char *email, char *password)
 	const bson_t		*doc;
 	bson_t			*query;
 
-        /* To be able to read a FField, Not a typo */
-        bson_iter_t		iter;
+	/* To be able to read a FField, Not a typo */
+	bson_iter_t		iter;
 	const bson_value_t	*value;
-        char                    *rvalue;
+	char                    *rvalue;
 
 	collection = mongoc_client_get_collection(client, getenv("ENVIRONMENT"), "users");
 	query = bson_new();
@@ -110,7 +112,7 @@ int authenticate_user(char *email, char *password)
 		if (bson_iter_init(&iter, doc) && bson_iter_find(&iter, "password")) {
 			value = bson_iter_value(&iter);
 
-                        rvalue = value->value.v_utf8.str;
+			rvalue = value->value.v_utf8.str;
 			retval = libscrypt_check(rvalue, password);
 		}
 	} else {
@@ -119,11 +121,11 @@ int authenticate_user(char *email, char *password)
 
 	bson_destroy(query);
 
-        if (retval > 0) {
-                return (KORE_RESULT_OK);
-        } else {
-                return (KORE_RESULT_ERROR);
-        }
+	if (retval > 0) {
+		return (KORE_RESULT_OK);
+	} else {
+		return (KORE_RESULT_ERROR);
+	}
 }
 
 int	sign_in(struct kore_task *t) {
@@ -131,6 +133,7 @@ int	sign_in(struct kore_task *t) {
 	char		outbuf[HASH_LENGTH];
 	char		tmpbuf[DHASH_LENGTH];
 	u_int32_t	len;
+	redisReply	*reply;
 
 	char		email[EMAIL_LENGTH];
 	char		password[PASSWORD_LENGTH];
@@ -142,14 +145,14 @@ int	sign_in(struct kore_task *t) {
 		return (KORE_RESULT_ERROR);
 
 	kore_snprintf(email, (len+1),
-		    NULL, "%s", dst);
+		      NULL, "%s", dst);
 
 	len = kore_task_channel_read(t, dst, sizeof(dst));
 	if (len > sizeof(dst))
 		return (KORE_RESULT_ERROR);
 
-        kore_snprintf(password, (len+1),
-                      NULL, "%s", dst);
+	kore_snprintf(password, (len+1),
+		      NULL, "%s", dst);
 
 	retval = authenticate_user(email, password);
 	if (retval <= KORE_RESULT_ERROR) {
@@ -157,25 +160,28 @@ int	sign_in(struct kore_task *t) {
 
 		return (KORE_RESULT_ERROR);
 	} else {
-                kore_snprintf(tmpbuf, DHASH_LENGTH+1,
-                      NULL, "%d%s%x", getpid(), email, (unsigned int) time(NULL));
+		kore_snprintf(tmpbuf, DHASH_LENGTH+1,
+			      NULL, "%d%s%x", getpid(), email, (unsigned int) time(NULL));
 
-                retval = libscrypt_hash(
-                                            outbuf,
-                                            tmpbuf,
-                                            SCRYPT_N,
-                                            SCRYPT_r,
-                                            SCRYPT_p
-                                           );
+		retval = libscrypt_hash(
+					outbuf,
+					tmpbuf,
+					SCRYPT_N,
+					SCRYPT_r,
+					SCRYPT_p
+				       );
 
-                if(retval > 0) {
-                        /* TODO: Store session or something, otherwise this is useless */
-                        kore_task_channel_write(t, outbuf, strlen(outbuf));
-                        kore_task_set_result(t, KORE_RESULT_OK);
+		if(retval > 0) {
+			kore_task_channel_write(t, outbuf, strlen(outbuf));
+			kore_task_set_result(t, KORE_RESULT_OK);
 
-                        return (KORE_RESULT_OK);
-                }
-        }
+			reply = redisCommand(redisClient, "SET %s %s", outbuf, email);
+
+			freeReplyObject(reply);
+
+			return (KORE_RESULT_OK);
+		}
+	}
 
 	return (KORE_RESULT_OK);
 }

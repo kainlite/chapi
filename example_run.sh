@@ -8,10 +8,12 @@ export MAIL_FROM="support@chapi.me"
 export ORGANIZATION="CHAPI"
 export DOMAIN="chapi.me"
 
-export CFLAGS="$(pkg-config --cflags --libs libmongoc-1.0)"
-export LDFLAGS="-lconfig -lcurl -lflate -lmongoc-1.0 -lscrypt"
+
+export CFLAGS="$(pkg-config --cflags --libs libmongoc-1.0) $(pkg-config --cflags --libs hiredis)"
+export LDFLAGS="-lconfig -lcurl -lflate -lmongoc-1.0 -lscrypt -lhiredis"
 
 sudo systemctl start mongodb
+sudo systemctl start redis
 
 kore clean
 

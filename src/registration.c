@@ -198,10 +198,11 @@ int	serve_sign_in(struct http_request *req)
 {
 	int		p;
 	char		*msg;
+	char		*extra;
 	char		*email;
 	char		*password;
-	char		session_id[HASH_LENGTH];
-	char		dst[HASH_LENGTH];
+	char		session_id[DHASH_LENGTH];
+	char		dst[DHASH_LENGTH];
 
 	u_int32_t	len;
 	u_int32_t	email_len;
@@ -263,8 +264,9 @@ int	serve_sign_in(struct http_request *req)
                 if (len > sizeof(dst))
                         return (KORE_RESULT_ERROR);
 
-                kore_snprintf(session_id, (len+1),
-                                              NULL, "session_id=%s", dst);
+		extra = "session_id=";
+                kore_snprintf(session_id, (len + strlen(extra) + 1),
+                                              NULL, "%s%s", extra, dst);
 
 		http_response_header(req, "set-cookie", session_id);
 
