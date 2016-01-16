@@ -8,7 +8,7 @@
 #include <bson.h>
 #include <mongoc.h>
 
-#include "hiredis.h"
+#include <hiredis.h>
 
 #include "libscrypt.h"
 
